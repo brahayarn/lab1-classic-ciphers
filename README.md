@@ -58,6 +58,60 @@ python3 -m classic_ciphers analyze -i experiments/results/vigenere.enc.txt
 Коди завершення: `0` — успіх, `1` — некоректний ключ, текст або файл (повідомлення
 `Помилка: …` у stderr, без трасування), `2` — неправильні аргументи командного рядка.
 
+## Демонстрація: від розділу звіту до команди
+
+Усі команди з кореня проєкту. Таблиця показує, де у звіті про це йдеться, який файл за це
+відповідає і що запустити, щоб побачити результат.
+
+| Розділ звіту | Де в коді | Що запустити |
+|---|---|---|
+| 2–3. Теорія і специфікація | `classic_ciphers/text.py` | `python3 -m classic_ciphers rules` |
+| 4. Перевірка ключів | `substitution.py`, `vigenere.py`, `permutation.py`, `columnar.py` | блок «Помилки» нижче |
+| 5. Проста підстановка | `substitution.py` | перший рядок блоку «Контрольні вектори» |
+| 5. Віженер | `vigenere.py` (`_shift`) | другий рядок блоку |
+| 5. Блокова перестановка | `block.py` (`_apply`), `permutation.py` (`invert`) | третій рядок блоку |
+| 5. Вертикальна перестановка | `columnar.py` | четвертий рядок блоку, потім блок «Доповнення» |
+| 6. Контрольні вектори | усі модулі | блок «Контрольні вектори» або `python3 experiments/run_experiment.py` |
+| 7. Тестування | `tests/` | `python3 -m unittest -v` |
+| 8. Власний текст | `samples/message.txt`, `experiments/results/` | блок «Файли» |
+| 9. Частотний аналіз | `analysis.py` | `python3 -m classic_ciphers analyze -i experiments/results/vigenere.enc.txt` |
+
+**Контрольні вектори** (результат у коментарі):
+
+```bash
+python3 -m classic_ciphers encrypt -c substitution --table ЯЮЬЩШЧЦХФУТСРПОНМЛКЙЇІИЗЖЄЕДҐГВБА -t "СЛАВА УКРАЇНІ"  # ІНЯЬЯ ЗОЇЯРЛС
+python3 -m classic_ciphers encrypt -c vigenere -k КЛЮЧ -t "СЛАВА УКРАЇНІ"                                    # ВЬЮЩК ДЇККЧЛД
+python3 -m classic_ciphers encrypt -c block -k "3 2 5 1 4" --mode letters -t "СЛАВА УКРАЇНІ"                 # АЛАСВРКЇУАНІ
+python3 -m classic_ciphers encrypt -c columnar -k "3 1 4 2" -t КРИПТОГРАФІЯ                                  # ИГІКТАПРЯРОФ
+python3 -m classic_ciphers decrypt -c vigenere -k КЛЮЧ -t "ВЬЮЩК ДЇККЧЛД"                                    # СЛАВА УКРАЇНІ
+python3 -m classic_ciphers decrypt -c block -k "3 2 5 1 4" --mode letters -t АЛАСВРКЇУАНІ                    # СЛАВАУКРАЇНІ
+python3 -m classic_ciphers decrypt -c columnar -k "3 1 4 2" --pad 0 -t ИГІКТАПРЯРОФ                         # КРИПТОГРАФІЯ
+```
+
+**Доповнення** у вертикальній перестановці (довжина не кратна числу стовпців):
+
+```bash
+python3 -m classic_ciphers encrypt -c columnar -k "3 1 4 2" -t КРИПТОГРАФ              # ИГХКТАПРХРОФ, «Додано службових символів: 2»
+python3 -m classic_ciphers decrypt -c columnar -k "3 1 4 2" --pad 2 -t ИГХКТАПРХРОФ    # КРИПТОГРАФ
+```
+
+**Помилки** (повідомлення «Помилка: …», код завершення 1, без трасування):
+
+```bash
+python3 -m classic_ciphers encrypt -c block -k "1 1 2" -t А; echo $?          # повтор у перестановці
+python3 -m classic_ciphers encrypt -c block -k "1 5 2" -t А; echo $?          # число поза діапазоном
+python3 -m classic_ciphers encrypt -c vigenere -k "" -t А; echo $?            # порожній ключ
+python3 -m classic_ciphers encrypt -c vigenere -k КЛЮЧ -t Hello; echo $?      # латиниця у тексті
+python3 -m classic_ciphers decrypt -c columnar -k "3 1 4 2" --pad 4 -t ИГІКТАПРЯРОФ; echo $?   # доповнення 0..3
+```
+
+**Файли** (власний текст на 482 літери):
+
+```bash
+python3 -m classic_ciphers encrypt -c vigenere -k ЗАХИСТ -i samples/message.txt -o cipher.txt
+python3 -m classic_ciphers decrypt -c vigenere -k ЗАХИСТ -i cipher.txt
+```
+
 ## Тести
 
 ```bash
